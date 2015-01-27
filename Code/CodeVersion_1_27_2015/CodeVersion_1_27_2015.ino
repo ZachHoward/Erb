@@ -37,17 +37,16 @@ int motorPin = 11;
 
 void setup() 
 {
-  // initialize serial communications and wait for port to open:
-  Serial.begin(9600);
   pinMode( motorPin, OUTPUT); // Motor pin Setup
   strip.begin(); // Neopixel Setup
   strip.show(); // Initialize all pixels to 'off'
+  colorWipe(strip.Color(255, 255, 255), 50);
   dht.begin(); // Temp Sensor (DHT22) setup
   tsl.begin(); // Light temsor 
   tsl.setGain(TSL2561_GAIN_16X); 
   tsl.setTiming(TSL2561_INTEGRATIONTIME_402MS);
-  //Serial.println("SMS Messages Receiver");
-    
+  colorWipe(strip.Color(255, 255, 255), 50);
+
   // connection state
   boolean notConnected = true;
   // Start GSM connection
@@ -61,68 +60,31 @@ void setup()
       delay(500);
     }
   }
-  
-  Serial.println("GSM initialized");
-  Serial.println("Waiting for messages");
 }
 
 void loop() 
 {
+  //Once in main loop Erb LED changs to a solid green color
   colorWipe(strip.Color(0, 255, 0), 50); // Green
   char c;
   String inputcommand="";
-  
-  // If there are any SMSs available()  
+  // Check for available SMS 
   if (sms.available())
   {
-    Serial.println("Message received from:");
-    
+ 
     // Get remote number
     sms.remoteNumber(senderNumber, 20);
-    Serial.println(senderNumber);
 
-    // An example of message disposal    
-    // Any messages starting with # should be discarded
-    if(sms.peek()=='#')
-    {
-      Serial.println("Discarded SMS");
-      sms.flush();
-    }
-    
     // Read message bytes and print them
     while(c=sms.read())
       inputcommand+=c;
-      //Serial.print(c);
-    
-    //Serial.println("\nEND OF MESSAGE");
-    //Serial.print("Before Flush:");
-    //Serial.println(sms.ready());
-    
-    // Delete message from modem memory
-    sms.flush();
-    Serial.println("MESSAGE DELETED");
-    Serial.print("After Flush:");
-    Serial.println(sms.ready());
-    
-    // Repeat saved message
-    Serial.println(inputcommand);
-    
-    Serial.print("Before Text:");
-    Serial.println(sms.ready());
-    // Send back a confirmation
+
     sms.beginSMS(senderNumber);
     delay(100);
     
     if(findWord("water",inputcommand)){
-      // Put code to activate motor pin here & blink light
-      //sms.print("Starting to Water");
       colorWipe(strip.Color(0, 0, 255), 50);  // Blue
-      //delay(1000);
-      //sms.endSMS(); 
-      //delay(500);
-      activateWatering(motorPin,5);
-      //sms.beginSMS(senderNumber);
-      //delay(500);
+      activateWatering(motorPin,3);
       sms.print("Thanks for the drink!");
     }
     else if(findWord("light",inputcommand)){
@@ -131,35 +93,40 @@ void loop()
       String stringOne = "The lumosity is: " ;
       String stringThree = stringOne + x;
       // Put code to activate motor pin here & blink light
-      sms.print(stringThree);  
+      //delay(200);
+      sms.print(stringThree);
+      delay(400);  
     }
     else if(findWord("temp",inputcommand)){
-      colorWipe(strip.Color(0, 0, 0), 50);
       char buffer[10];
       float h = dht.readHumidity();
       float f = dht.readTemperature(true); // Read temperature as Fahrenheit
       String dht_stringOne = "The temp is: " ;
       String dht_stringThree = dht_stringOne + dtostrf(f, 5, 1, buffer);
       sms.print(dht_stringThree); 
+      colorWipe(strip.Color(0, 0, 0), 50);
+      delay(400);
     }
     
     else if(findWord("hello",inputcommand)){
       sms.print("Hello my name is Erb, lets grow some plants!");
       colorWipe(strip.Color(255, 128, 255), 50);
-      delay(100);  
+      delay(400);
+        
     }
     else if(findWord("error",inputcommand)){
+      sms.print("You are experiencing an error...."); 
       colorWipe(strip.Color(255, 0, 0), 50);
-      delay(1000);
-      sms.print("You are experiencing an error....");  
+      delay(400); 
     }
-    
     else {
       sms.print("I dont know what that means :( ");
+      colorWipe(strip.Color(255, 0, 0), 50);
+      delay(400);
     }
     
     // delay and send
-    delay(250);
+    //delay(250);
     sms.endSMS(); 
     delay(100);
     
@@ -172,6 +139,7 @@ void loop()
   //delay(1000);
   //Serial.print("After delay:");
   //Serial.println(sms.ready());
+  sms.flush();
   }
 
 
@@ -215,20 +183,7 @@ void colorWipe(uint32_t c, uint8_t wait) {
     noTone(8);
   }
  }
- 
-/*  void play_hello(){
-   int melody[] = {NOTE_F4, NOTE_A4,NOTE_B4,NOTE_F4, NOTE_A4,NOTE_B4,NOTE_F4,NOTE_A4,NOTE_B4,NOTE_E5,NOTE_D5,NOTE_B4,NOTE_C5,NOTE_B4,NOTE_G4,NOTE_E4,NOTE_D4,NOTE_E4,NOTE_G4,NOTE_E4,NOTE_F4, NOTE_A4,NOTE_B4,NOTE_F4, NOTE_A4,NOTE_B4,NOTE_F4,NOTE_A4,NOTE_B4,NOTE_E5,NOTE_D5,NOTE_B4,NOTE_C5,NOTE_B4,NOTE_G4,NOTE_E4,NOTE_D4,NOTE_E4,NOTE_G4,NOTE_E4};
-   int noteDurations[] = {8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 4, 8, 8, 8, 8, 3, 8, 8, 8, 2,8,8,8,2 };
-   int song_length= sizeof(melody);
-   for (int thisNote = 0; thisNote < 20 ; thisNote++) {
-    int noteDuration = 2000/noteDurations[thisNote];
-    tone(8, melody[thisNote],noteDuration);
-    int pauseBetweenNotes = noteDuration * 1.10;
-    delay(pauseBetweenNotes);
-    noTone(8);
-  }
- }
- */
+
 /* Initialization Notes
 
 DHT22: Initialize DHT sensor for normal 16mhz Arduino
