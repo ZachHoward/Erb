@@ -70,16 +70,14 @@ void loop()
   char c;
   String inputcommand="";
   // Check for available SMS 
-  delay(1000);
-  if (sms.available())
-  {
- 
+  //delay(1000);
+  if (sms.available()){
     // Get remote number
     sms.remoteNumber(senderNumber, 20);
-
     // Read message bytes and print them
     while(c=sms.read())
       inputcommand+=c;
+    
     sms.beginSMS(senderNumber);
     
     if(findWord("water",inputcommand)){
@@ -88,6 +86,23 @@ void loop()
       sms.print("Thanks for the drink!");
       sms.endSMS();
     }
+    
+    else if(findWord("feeling",inputcommand)){
+      // Question: "How are you feeling?" "Feeling good?"
+      colorWipe(strip.Color(0, 0, 0), 50);
+      uint16_t x = tsl.getLuminosity(TSL2561_VISIBLE);
+      float f = dht.readTemperature(true);
+      if(x>=1500 && f>=70.0){
+        sms.print("I'm feeling great! Getting enough light and the temperature feels good.");
+        delay(1000);
+        sms.endSMS();
+      } else if(x<=1500 && f>=70.0){
+        sms.print("I'm O.K.! It's a little dark in here but the temperature feels good.");
+        delay(1000);
+        sms.endSMS();
+      }
+    }
+    
     else if(findWord("light",inputcommand)){
       colorWipe(strip.Color(0, 0, 0), 50);    // Black/off
       uint16_t x = tsl.getLuminosity(TSL2561_VISIBLE);  
@@ -95,8 +110,7 @@ void loop()
       String stringThree = stringOne + x;
       sms.print(stringThree);
       delay(1000);
-      sms.endSMS();
-      //delay(400);  
+      sms.endSMS();  
     }
     else if(findWord("temp",inputcommand)){
       colorWipe(strip.Color(0, 0, 0), 50);
@@ -113,7 +127,7 @@ void loop()
     else if(findWord("hello",inputcommand)){
       colorWipe(strip.Color(255, 128, 255), 50);
       sms.print("Hello my name is Erb, lets grow some plants!");
-      //delay(1000);
+      delay(1000);
       sms.endSMS();
         
     }
@@ -129,13 +143,10 @@ void loop()
       sms.print("I dont know what that means :( ");
       delay(1000);
       sms.endSMS();
-   
     }
-    
     sms.flush();
-    
-  }
-  }
+    }
+   }
 
 
  int findWord(String searchWord, String sentence) {
@@ -153,7 +164,7 @@ void loop()
  int activateWatering(int motor_pin,int delaySeconds){
    digitalWrite(motor_pin,HIGH);
    play_melody();
-   delay(delaySeconds*1000);
+   //delay(delaySeconds*1000);
    digitalWrite(motor_pin,LOW);
  }
 
