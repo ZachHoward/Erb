@@ -28,7 +28,7 @@ Lots of thanks to Adafruit for their amazing Neopixel, DHT22 and TSL2561 librari
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(PIXEL_COUNT, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 DHT dht(DHTPIN, DHTTYPE);
 TSL2561 tsl(TSL2561_ADDR_FLOAT); 
-GSM gsmAccess;
+GSM gsmAccess(true);
 GSM_SMS sms;
 
 // Array to hold the number a SMS is retreived from
@@ -37,6 +37,7 @@ int motorPin = 11;
 
 void setup() 
 {
+  Serial.begin(9600);
   pinMode( motorPin, OUTPUT); // Motor pin Setup
   strip.begin(); // Neopixel Setup
   strip.show(); // Initialize all pixels to 'off'
@@ -69,6 +70,7 @@ void loop()
   char c;
   String inputcommand="";
   // Check for available SMS 
+  delay(1000);
   if (sms.available())
   {
  
@@ -78,68 +80,61 @@ void loop()
     // Read message bytes and print them
     while(c=sms.read())
       inputcommand+=c;
-
     sms.beginSMS(senderNumber);
-    delay(100);
     
     if(findWord("water",inputcommand)){
       colorWipe(strip.Color(0, 0, 255), 50);  // Blue
       activateWatering(motorPin,3);
       sms.print("Thanks for the drink!");
+      sms.endSMS();
     }
     else if(findWord("light",inputcommand)){
       colorWipe(strip.Color(0, 0, 0), 50);    // Black/off
       uint16_t x = tsl.getLuminosity(TSL2561_VISIBLE);  
       String stringOne = "The lumosity is: " ;
       String stringThree = stringOne + x;
-      // Put code to activate motor pin here & blink light
-      //delay(200);
       sms.print(stringThree);
-      delay(400);  
+      delay(1000);
+      sms.endSMS();
+      //delay(400);  
     }
     else if(findWord("temp",inputcommand)){
+      colorWipe(strip.Color(0, 0, 0), 50);
       char buffer[10];
       float h = dht.readHumidity();
       float f = dht.readTemperature(true); // Read temperature as Fahrenheit
       String dht_stringOne = "The temp is: " ;
       String dht_stringThree = dht_stringOne + dtostrf(f, 5, 1, buffer);
-      sms.print(dht_stringThree); 
-      colorWipe(strip.Color(0, 0, 0), 50);
-      delay(400);
+      sms.print(dht_stringThree);
+      delay(1000); 
+      sms.endSMS();
     }
     
     else if(findWord("hello",inputcommand)){
-      sms.print("Hello my name is Erb, lets grow some plants!");
       colorWipe(strip.Color(255, 128, 255), 50);
-      delay(400);
+      sms.print("Hello my name is Erb, lets grow some plants!");
+      //delay(1000);
+      sms.endSMS();
         
     }
     else if(findWord("error",inputcommand)){
-      sms.print("You are experiencing an error...."); 
       colorWipe(strip.Color(255, 0, 0), 50);
-      delay(400); 
+      sms.print("You are experiencing an error...."); 
+      delay(1000);
+      sms.endSMS();
     }
     else {
-      sms.print("I dont know what that means :( ");
       colorWipe(strip.Color(255, 0, 0), 50);
-      delay(400);
+      //sms.beginSMS(senderNumber);
+      sms.print("I dont know what that means :( ");
+      delay(1000);
+      sms.endSMS();
+   
     }
     
-    // delay and send
-    //delay(250);
-    sms.endSMS(); 
-    delay(100);
+    sms.flush();
     
-    //Serial.print("After Text:");
-    //Serial.println(sms.ready())
-    //Serial.println("\nCOMPLETE!\n");
   }
-  //Serial.print("Before delay: ");
-  //Serial.println(sms.ready());
-  //delay(1000);
-  //Serial.print("After delay:");
-  //Serial.println(sms.ready());
-  sms.flush();
   }
 
 
@@ -183,6 +178,7 @@ void colorWipe(uint32_t c, uint8_t wait) {
     noTone(8);
   }
  }
+ 
 
 /* Initialization Notes
 
